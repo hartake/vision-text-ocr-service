@@ -27,5 +27,9 @@ This service is the backend component of a client-server decoupled full-stack ap
 - `POST /api/v1/save_text_to_db` - Save OCR text to database
 
 
-## API Endpoints
+## Start Up
 - Run with`python main.py` for development or `uvicorn main:app` in terminal
+
+## API Preview
+
+![API Swagger Docs](preview/api-swagger.png)
