@@ -1,6 +1,6 @@
 # Vision Text OCR Service
 
-This project is the backend API service for the Vision Text OCR application. A service that captures text from images using optical character recognition.
+This project is the backend API service for the Vision Text OCR application. A service that captures text from images using optical character recognition. See frontend ui service [here](https://github.com/hartake/vision-text-ocr-ui)
 
 ## Purpose
 
