@@ -1,8 +1,5 @@
 """
 Vision Text OCR Service - Main Entry Point
-
-A FastAPI service that extracts text from images using OCR technology.
-Provides REST endpoints for image upload and text extraction.
 """
 import os
 import uvicorn
@@ -16,9 +13,6 @@ from api.api import router as api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Handle startup and shutdown events for the application.
-    """
     print("Starting Vision Text OCR Service...")
     os.makedirs(utils.TEMP_DIR, exist_ok=True)
     await database.connect_to_db()
@@ -30,9 +24,6 @@ async def lifespan(app: FastAPI):
     print("👋 Vision Text OCR Service stopped.")
 
 def create_app() -> FastAPI:
-    """
-    Create and configure the FastAPI application.
-    """
     app = FastAPI(
         title="Vision Text OCR Service",
         description="Extract text from images using OCR",
@@ -40,16 +31,14 @@ def create_app() -> FastAPI:
         lifespan=lifespan
     )
 
-    # Add CORS middleware for frontend communication
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173"], # The address of the React UI
+        allow_origins=["http://localhost:5173"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    # Include the API router
     app.include_router(api_router)
     
     return app
@@ -57,7 +46,6 @@ def create_app() -> FastAPI:
 app = create_app()
 
 if __name__ == "__main__":
-    # Run with`python main.py` for development or "uvicorn main:app"
     uvicorn.run(
         "main:app",
         host="0.0.0.0",

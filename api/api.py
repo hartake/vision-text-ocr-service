@@ -6,7 +6,7 @@ import ocr.ocr as ocr
 import utils
 import database.database as database
 import os
-from models.models import OCRResultBase, OCRResultInDB
+from models.models import OCRResultBase, OCRResultInDB, FeedbackBase, FeedbackInDB
 
 
 TABLE_NAME = database.TABLE_NAME
@@ -50,8 +50,7 @@ async def extract_text_async(Images: List[UploadFile] = File(...)):
         tasks.append(asyncio.create_task(ocr.read_image(temp_file)))
 
     try:
-        texts = await asyncio.gather(*tasks) # Execute all OCR tasks concurrently
-
+        texts = await asyncio.gather(*tasks)
         async with database.cached_db_pool.acquire() as connection:
             for i, raw_extracted_text in enumerate(texts):
                 original_filename = Images[i].filename
@@ -73,7 +72,6 @@ async def extract_text_async(Images: List[UploadFile] = File(...)):
                     # Todo: in prod space - log this error or handle it more robustly per image
                     print(f"Warning: Failed to save OCR result for {original_filename} to database.")
     finally:
-        # Clean up parsed files
         for temp_file in temp_files:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
@@ -86,10 +84,6 @@ async def extract_text_async(Images: List[UploadFile] = File(...)):
 
 @router.get("/api/v1/load_saved_text_from_db", response_model=List[OCRResultInDB])
 async def load_saved_text_from_db(limit: int = 100, offset: int = 0):
-    """
-    Retrieves a list of all saved OCR results from the database.
-    Supports pagination with 'limit' and 'offset' query parameters.
-    """
     async with database.cached_db_pool.acquire() as connection:
         query = f"""
             SELECT id, filename, extracted_text, created_at
@@ -99,15 +93,11 @@ async def load_saved_text_from_db(limit: int = 100, offset: int = 0):
         """
         records = await connection.fetch(query, limit, offset)
         
-        # Convert each asyncpg.Record to an OCRResultInDB Pydantic model
         return [OCRResultInDB(**dict(record)) for record in records]
 
 
 @router.get("/api/v1/load_saved_text_from_db/{ocr_id}", response_model=OCRResultInDB)
 async def load_saved_text_from_db_by_id(ocr_id: int):
-    """
-    Retrieves a single saved OCR result from the database by its ID.
-    """
     async with database.cached_db_pool.acquire() as connection:
         query = f"""
             SELECT id, filename, extracted_text, created_at
@@ -124,24 +114,32 @@ async def load_saved_text_from_db_by_id(ocr_id: int):
 
 @router.post("/api/v1/save_text_to_db", response_model=OCRResultInDB, status_code=status.HTTP_201_CREATED)
 async def save_text_to_db(ocr_result: OCRResultBase):
-    """
-    Saves the extracted OCR text for a given filename to the database.
-    """
     async with database.cached_db_pool.acquire() as connection:
-        # SQL INSERT statement to save data, returning the generated id and created_at
         query = f"""
             INSERT INTO {TABLE_NAME} (filename, extracted_text)
             VALUES ($1, $2)
             RETURNING id, filename, extracted_text, created_at;
         """
-        # Execute the query, passing Pydantic model fields as arguments
-        # asyncpg returns a Record object, which we convert to a dictionary
         saved_record = await connection.fetchrow(query, ocr_result.filename, ocr_result.extracted_text)
         
-        if saved_record: # Check if a record was actually returned
-            # Convert the asyncpg.Record to a dictionary and then to our Pydantic model
+        if saved_record:
             return OCRResultInDB(**dict(saved_record))
         else:
-            # This case should ideally not be reached with RETURNING, but good for robustness
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to save OCR result.")
+
+
+@router.post("/api/v1/feedback", response_model=FeedbackInDB, status_code=status.HTTP_201_CREATED)
+async def save_feedback(feedback: FeedbackBase):
+    async with database.cached_db_pool.acquire() as connection:
+        query = """
+            INSERT INTO vision_text_feedback (comment)
+            VALUES ($1)
+            RETURNING id, comment, created_at;
+        """
+        saved_record = await connection.fetchrow(query, feedback.comment)
+        
+        if saved_record:
+            return FeedbackInDB(**dict(saved_record))
+        else:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to save feedback.")
 
