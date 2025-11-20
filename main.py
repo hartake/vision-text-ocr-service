@@ -33,7 +33,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173"],
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -41,6 +41,10 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router)
     
+    @app.get("/")
+    def home():
+        return {"message": "Welcome to the Vision Text OCR Service. Visit /docs for API details."}
+        
     return app
 
 app = create_app()

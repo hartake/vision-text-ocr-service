@@ -11,13 +11,9 @@ from models.models import OCRResultBase, OCRResultInDB, FeedbackBase, FeedbackIn
 
 TABLE_NAME = database.TABLE_NAME
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1")
 
-@router.get("/")
-def home():
-    return {"message": "Visit the endpoint: /api/v1/extract_text to perform OCR."}
-
-@router.post("/api/v1/extract_text")
+@router.post("/extract_text")
 async def extract_text(Images: List[UploadFile] = File(...)):
     response = {}
     s = time.time()
@@ -82,7 +78,7 @@ async def extract_text_async(Images: List[UploadFile] = File(...)):
     return saved_ocr_results
 
 
-@router.get("/api/v1/load_saved_text_from_db", response_model=List[OCRResultInDB])
+@router.get("/load_saved_text_from_db", response_model=List[OCRResultInDB])
 async def load_saved_text_from_db(limit: int = 100, offset: int = 0):
     async with database.cached_db_pool.acquire() as connection:
         query = f"""
@@ -96,7 +92,7 @@ async def load_saved_text_from_db(limit: int = 100, offset: int = 0):
         return [OCRResultInDB(**dict(record)) for record in records]
 
 
-@router.get("/api/v1/load_saved_text_from_db/{ocr_id}", response_model=OCRResultInDB)
+@router.get("/load_saved_text_from_db/{ocr_id}", response_model=OCRResultInDB)
 async def load_saved_text_from_db_by_id(ocr_id: int):
     async with database.cached_db_pool.acquire() as connection:
         query = f"""
@@ -112,7 +108,7 @@ async def load_saved_text_from_db_by_id(ocr_id: int):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"OCR Result with ID {ocr_id} not found.")
 
 
-@router.post("/api/v1/save_text_to_db", response_model=OCRResultInDB, status_code=status.HTTP_201_CREATED)
+@router.post("/save_text_to_db", response_model=OCRResultInDB, status_code=status.HTTP_201_CREATED)
 async def save_text_to_db(ocr_result: OCRResultBase):
     async with database.cached_db_pool.acquire() as connection:
         query = f"""
@@ -128,7 +124,7 @@ async def save_text_to_db(ocr_result: OCRResultBase):
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to save OCR result.")
 
 
-@router.post("/api/v1/feedback", response_model=FeedbackInDB, status_code=status.HTTP_201_CREATED)
+@router.post("/feedback", response_model=FeedbackInDB, status_code=status.HTTP_201_CREATED)
 async def save_feedback(feedback: FeedbackBase):
     async with database.cached_db_pool.acquire() as connection:
         query = """
