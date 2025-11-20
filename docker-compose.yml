@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # FastAPI Backend
+  backend:
+    build: .
+    container_name: ocr-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=5432
+      - DB_HOST=db
+    depends_on:
+      - db
+    volumes:
+      - ./temp:/app/temp
+
+volumes:
+  postgres_data:
+
