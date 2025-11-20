@@ -134,3 +134,4 @@ cython_debug/
 
 # Temporary files
 temp/
+docker-container-plan.md
