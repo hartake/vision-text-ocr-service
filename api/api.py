@@ -31,7 +31,7 @@ async def extract_text(Images: List[UploadFile] = File(...)):
 
     return response
 
-@router.post("/api/v1/extract_text_async", response_model=List[OCRResultInDB])
+@router.post("/extract_text_async", response_model=List[OCRResultInDB])
 async def extract_text_async(Images: List[UploadFile] = File(...)):
     s = time.time()
     

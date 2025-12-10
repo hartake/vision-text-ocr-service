@@ -30,6 +30,7 @@ services:
       - db
     volumes:
       - ./temp:/app/temp
+      - .:/app
 
 volumes:
   postgres_data:
